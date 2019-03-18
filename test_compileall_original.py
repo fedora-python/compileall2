@@ -1,5 +1,5 @@
 import sys
-import compileall
+import compileall2 as compileall
 import importlib.util
 import test.test_importlib.util
 import os
@@ -218,14 +218,14 @@ class CompileallTestsBase:
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
-    @mock.patch('compileall.compile_file')
+    @mock.patch('compileall2.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):
         compileall.compile_dir(self.directory, quiet=True)
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
     @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
-    @mock.patch('compileall.compile_file')
+    @mock.patch('compileall2.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
@@ -300,7 +300,7 @@ class CommandLineTestsBase:
 
     def _get_run_args(self, args):
         return [*support.optim_args_from_interpreter_flags(),
-                '-S', '-m', 'compileall',
+                '-S', '-m', 'compileall2',
                 *args]
 
     def assertRunOK(self, *args, **env_vars):
@@ -376,7 +376,7 @@ class CommandLineTestsBase:
     ]:
         def f(self, ext=ext, switch=switch):
             script_helper.assert_python_ok(*(switch +
-                ['-m', 'compileall', '-q', self.pkgdir]))
+                ['-m', 'compileall2', '-q', self.pkgdir]))
             # Verify the __pycache__ directory contents.
             self.assertTrue(os.path.exists(self.pkgdir_cachedir))
             expected = sorted(base.format(sys.implementation.cache_tag, ext)
@@ -605,7 +605,7 @@ class CommandLineTestsBase:
         for file in files:
             self.assertCompiled(file)
 
-    @mock.patch('compileall.compile_dir')
+    @mock.patch('compileall2.compile_dir')
     def test_workers_available_cores(self, compile_dir):
         with mock.patch("sys.argv",
                         new=[sys.executable, self.directory, "-j0"]):
