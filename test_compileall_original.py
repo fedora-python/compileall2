@@ -300,7 +300,7 @@ class CommandLineTestsBase:
 
     def _get_run_args(self, args):
         return [*support.optim_args_from_interpreter_flags(),
-                '-S', '-m', 'compileall2',
+                '-m', 'compileall2',
                 *args]
 
     def assertRunOK(self, *args, **env_vars):
