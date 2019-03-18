@@ -305,13 +305,15 @@ class CommandLineTestsBase:
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-                         *self._get_run_args(args), **env_vars)
+                         *self._get_run_args(args), **env_vars,
+                         __isolated=False)
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                        *self._get_run_args(args), **env_vars)
+                        *self._get_run_args(args), **env_vars,
+                        __isolated=False)
         return rc, out, err
 
     def assertCompiled(self, fn):
@@ -376,7 +378,7 @@ class CommandLineTestsBase:
     ]:
         def f(self, ext=ext, switch=switch):
             script_helper.assert_python_ok(*(switch +
-                ['-m', 'compileall2', '-q', self.pkgdir]))
+                ['-m', 'compileall2', '-q', self.pkgdir]), __isolated=False)
             # Verify the __pycache__ directory contents.
             self.assertTrue(os.path.exists(self.pkgdir_cachedir))
             expected = sorted(base.format(sys.implementation.cache_tag, ext)
