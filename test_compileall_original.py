@@ -11,6 +11,7 @@ import tempfile
 import time
 import unittest
 import io
+import functools
 
 from unittest import mock, skipUnless
 try:
@@ -22,8 +23,43 @@ except ImportError:
 from test import support
 from test.support import script_helper
 
-from .test_py_compile import without_source_date_epoch
-from .test_py_compile import SourceDateEpochTestMeta
+# Backported from Lib/test/test_py_compile.py
+def without_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH unset."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env.unset('SOURCE_DATE_EPOCH')
+            return fxn(*args, **kwargs)
+    return wrapper
+
+# Backported from Lib/test/test_py_compile.py
+def with_source_date_epoch(fxn):
+    """Runs function with SOURCE_DATE_EPOCH set."""
+    @functools.wraps(fxn)
+    def wrapper(*args, **kwargs):
+        with support.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '123456789'
+            return fxn(*args, **kwargs)
+    return wrapper
+
+
+# Run tests with SOURCE_DATE_EPOCH set or unset explicitly.
+# Backported from Lib/test/test_py_compile.py
+class SourceDateEpochTestMeta(type(unittest.TestCase)):
+    def __new__(mcls, name, bases, dct, *, source_date_epoch):
+        cls = super().__new__(mcls, name, bases, dct)
+
+        for attr in dir(cls):
+            if attr.startswith('test_'):
+                meth = getattr(cls, attr)
+                if source_date_epoch:
+                    wrapper = with_source_date_epoch(meth)
+                else:
+                    wrapper = without_source_date_epoch(meth)
+                setattr(cls, attr, wrapper)
+
+        return cls
 
 
 class CompileallTestsBase:
