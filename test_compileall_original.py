@@ -88,9 +88,9 @@ class CompileallTestsBase:
 
     def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
-            data = file.read(12)
+            data = file.read(compileall.pyc_header_lenght)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
+        compare = struct.pack(*compileall.pyc_header_format, mtime)
         return data, compare
 
     def recreation_check(self, metadata):
@@ -111,8 +111,7 @@ class CompileallTestsBase:
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
-                                          0, 1))
+        self.recreation_check(struct.pack(*compileall.pyc_header_format, 1))
 
     def test_magic_number(self):
         # Test a change in mtime leads to a new .pyc.
@@ -579,6 +578,8 @@ class CommandLineTestsBase:
         out = self.assertRunOK('badfilename')
         self.assertRegex(out, b"Can't list 'badfilename'")
 
+    @unittest.skipIf(not compileall.PY37,
+                     "Python <= 3.6 doesn't contain invalidation modes")
     def test_pyc_invalidation_mode(self):
         script_helper.make_script(self.pkgdir, 'f1', '')
         pyc = importlib.util.cache_from_source(

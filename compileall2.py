@@ -18,6 +18,22 @@ import struct
 
 from functools import partial
 
+# Python 3.7 and higher
+PY37 = sys.version_info[0:2] >= (3, 7)
+
+# Python 3.7 and above has a different structure and length
+# of pyc files header. Also, multiple ways how to invalidate pyc file was
+# introduced in Python 3.7. These cases are covered by variables here or by PY37
+# variable itself.
+if PY37:
+    pyc_struct_format = '<4sll'
+    pyc_header_lenght = 12
+    pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER, 0)
+else:
+    pyc_struct_format = '<4sl'
+    pyc_header_lenght = 8
+    pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER)
+
 __all__ = ["compile_dir","compile_file","compile_path"]
 
 def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
@@ -143,10 +159,9 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sll', importlib.util.MAGIC_NUMBER,
-                                         0, mtime)
+                    expect = struct.pack(*pyc_header_format, mtime)
                     with open(cfile, 'rb') as chandle:
-                        actual = chandle.read(12)
+                        actual = chandle.read(pyc_header_lenght)
                     if expect == actual:
                         return success
                 except OSError:
@@ -154,9 +169,13 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not quiet:
                 print('Compiling {!r}...'.format(fullname))
             try:
-                ok = py_compile.compile(fullname, cfile, dfile, True,
-                                        optimize=optimize,
-                                        invalidation_mode=invalidation_mode)
+                if PY37:
+                    ok = py_compile.compile(fullname, cfile, dfile, True,
+                                            optimize=optimize,
+                                            invalidation_mode=invalidation_mode)
+                else:
+                    ok = py_compile.compile(fullname, cfile, dfile, True,
+                                            optimize=optimize)
             except py_compile.PyCompileError as err:
                 success = False
                 if quiet >= 2:
@@ -257,14 +276,16 @@ def main():
                               'to the equivalent of -l sys.path'))
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
-    invalidation_modes = [mode.name.lower().replace('_', '-')
-                          for mode in py_compile.PycInvalidationMode]
-    parser.add_argument('--invalidation-mode',
-                        choices=sorted(invalidation_modes),
-                        help=('set .pyc invalidation mode; defaults to '
-                              '"checked-hash" if the SOURCE_DATE_EPOCH '
-                              'environment variable is set, and '
-                              '"timestamp" otherwise.'))
+
+    if PY37:
+        invalidation_modes = [mode.name.lower().replace('_', '-')
+                              for mode in py_compile.PycInvalidationMode]
+        parser.add_argument('--invalidation-mode',
+                            choices=sorted(invalidation_modes),
+                            help=('set .pyc invalidation mode; defaults to '
+                                  '"checked-hash" if the SOURCE_DATE_EPOCH '
+                                  'environment variable is set, and '
+                                  '"timestamp" otherwise.'))
 
     args = parser.parse_args()
     compile_dests = args.compile_dest
@@ -293,7 +314,7 @@ def main():
     if args.workers is not None:
         args.workers = args.workers or None
 
-    if args.invalidation_mode:
+    if PY37 and args.invalidation_mode:
         ivl_mode = args.invalidation_mode.replace('-', '_').upper()
         invalidation_mode = py_compile.PycInvalidationMode[ivl_mode]
     else:
