@@ -14,7 +14,13 @@ The goal is to make it compatible for Python >= 3.4 & PyPy 3 and add some featur
 
 * ✓ Make upstream tests running
 
-* Make `compileall2` compatible with CPython 3.6, 3.5 and 3.4
+* Make `compileall2` compatible with CPythons:
+
+  * 3.8 ✓
+  * 3.7 ✓
+  * 3.6
+  * 3.5
+  * 3.4
 
 * Make `compileall2` compatible with PyPy 3
 
