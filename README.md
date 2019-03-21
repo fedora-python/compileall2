@@ -19,7 +19,7 @@ The goal is to make it compatible for Python >= 3.4 & PyPy 3 and add some featur
   * 3.8 ✓
   * 3.7 ✓
   * 3.6 ✓
-  * 3.5
+  * 3.5 ✓
   * 3.4
 
 * Make `compileall2` compatible with PyPy 3

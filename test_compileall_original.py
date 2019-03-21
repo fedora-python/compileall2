@@ -23,6 +23,22 @@ except ImportError:
 from test import support
 from test.support import script_helper
 
+# Backported from subprocess/test.support module for Python <= 3.5
+def _optim_args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    optimization settings in sys.flags."""
+    args = []
+    value = sys.flags.optimize
+    if value > 0:
+        args.append('-' + 'O' * value)
+    return args
+
+# Use the original one for Python > 3.5 and backported function otherwise
+if compileall.PY36:
+    optim_args_from_interpreter_flags = support.optim_args_from_interpreter_flags
+else:
+    optim_args_from_interpreter_flags = _optim_args_from_interpreter_flags
+
 # Backported from Lib/test/test_py_compile.py
 def without_source_date_epoch(fxn):
     """Runs function with SOURCE_DATE_EPOCH unset."""
@@ -60,6 +76,11 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
                 setattr(cls, attr, wrapper)
 
         return cls
+
+    # This is actually noop but has to be there because Python <= 3.5
+    # doesn't support passing keyword arguments to type.__init__() method
+    def __init__(mcls, name, bases, dct, source_date_epoch, **kwargs):
+        super().__init__(name, bases, dct)
 
 
 class CompileallTestsBase:
@@ -298,7 +319,7 @@ class CommandLineTestsBase:
             raise unittest.SkipTest('not all entries on sys.path are writable')
 
     def _get_run_args(self, args):
-        return [*support.optim_args_from_interpreter_flags(),
+        return [*optim_args_from_interpreter_flags(),
                 '-m', 'compileall2',
                 *args]
 
