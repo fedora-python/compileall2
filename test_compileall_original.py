@@ -21,7 +21,12 @@ except ImportError:
     _have_multiprocessing = False
 
 from test import support
-from test.support import script_helper
+try:
+    # Python >= 3.5
+    from test.support import script_helper
+except ImportError:
+    # Python 3.4
+    from test import script_helper
 
 # Backported from subprocess/test.support module for Python <= 3.5
 def _optim_args_from_interpreter_flags():
@@ -111,7 +116,7 @@ class CompileallTestsBase:
         with open(self.bc_path, 'rb') as file:
             data = file.read(compileall.pyc_header_lenght)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack(*compileall.pyc_header_format, mtime)
+        compare = struct.pack(*(compileall.pyc_header_format + (mtime,)))
         return data, compare
 
     def recreation_check(self, metadata):
@@ -132,7 +137,7 @@ class CompileallTestsBase:
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack(*compileall.pyc_header_format, 1))
+        self.recreation_check(struct.pack(*(compileall.pyc_header_format + (1, ))))
 
     def test_magic_number(self):
         # Test a change in mtime leads to a new .pyc.
@@ -203,15 +208,16 @@ class CompileallTestsBase:
         # make sure compiling with different optimization settings than the
         # interpreter's creates the correct file names
         optimize, opt = (1, 1) if __debug__ else (0, '')
+        opt_kwarg = compileall.optimization_kwarg(opt)
         compileall.compile_dir(self.directory, quiet=True, optimize=optimize)
         cached = importlib.util.cache_from_source(self.source_path,
-                                                  optimization=opt)
+                                                  **opt_kwarg)
         self.assertTrue(os.path.isfile(cached))
         cached2 = importlib.util.cache_from_source(self.source_path2,
-                                                   optimization=opt)
+                                                   **opt_kwarg)
         self.assertTrue(os.path.isfile(cached2))
         cached3 = importlib.util.cache_from_source(self.source_path3,
-                                                   optimization=opt)
+                                                   **opt_kwarg)
         self.assertTrue(os.path.isfile(cached3))
 
     def test_compile_dir_pathlike(self):
@@ -319,21 +325,21 @@ class CommandLineTestsBase:
             raise unittest.SkipTest('not all entries on sys.path are writable')
 
     def _get_run_args(self, args):
-        return [*optim_args_from_interpreter_flags(),
-                '-m', 'compileall2',
-                *args]
+        return [o for o in optim_args_from_interpreter_flags()] + \
+               ['-m', 'compileall2'] + \
+               [a for a in args]
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-                         *self._get_run_args(args), **env_vars,
-                         __isolated=False)
+                         *self._get_run_args(args), __isolated=False,
+                         **env_vars)
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                        *self._get_run_args(args), **env_vars,
-                        __isolated=False)
+                        *self._get_run_args(args), __isolated=False,
+                        **env_vars)
         return rc, out, err
 
     def assertCompiled(self, fn):
@@ -397,6 +403,8 @@ class CommandLineTestsBase:
         ('doubleoptimize', 'opt-2.pyc', ['-OO']),
     ]:
         def f(self, ext=ext, switch=switch):
+            if not compileall.PY35:
+                raise unittest.SkipTest("Python 3.4 generates .pyo files")
             script_helper.assert_python_ok(*(switch +
                 ['-m', 'compileall2', '-q', self.pkgdir]), __isolated=False)
             # Verify the __pycache__ directory contents.
@@ -408,6 +416,25 @@ class CommandLineTestsBase:
             self.assertFalse([fn for fn in os.listdir(self.pkgdir)
                               if fn.endswith(ext)])
         locals()['test_pep3147_paths_' + name] = f
+
+    for name, ext, switch in [
+        ('normal', 'pyc', []),
+        ('optimize', 'pyo', ['-O']),
+    ]:
+        def f(self, ext=ext, switch=switch):
+            if compileall.PY35:
+                raise unittest.SkipTest("Python 3.4 only test")
+            script_helper.assert_python_ok(*(switch +
+                ['-m', 'compileall2', '-q', self.pkgdir]), __isolated=False)
+            # Verify the __pycache__ directory contents.
+            self.assertTrue(os.path.exists(self.pkgdir_cachedir))
+            expected = sorted(base.format(sys.implementation.cache_tag, ext)
+                              for base in ('__init__.{}.{}', 'bar.{}.{}'))
+            self.assertEqual(sorted(os.listdir(self.pkgdir_cachedir)), expected)
+            # Make sure there are no .pyc files in the source directory.
+            self.assertFalse([fn for fn in os.listdir(self.pkgdir)
+                              if fn.endswith(ext)])
+        locals()['test_python34_pyo_files_' + name] = f
 
     def test_legacy_paths(self):
         # Ensure that with the proper switch, compileall leaves legacy

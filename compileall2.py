@@ -22,6 +22,8 @@ from functools import partial
 PY37 = sys.version_info[0:2] >= (3, 7)
 # Python 3.6 and higher
 PY36 = sys.version_info[0:2] >= (3, 6)
+# Python 3.5 and higher
+PY35 = sys.version_info[0:2] >= (3, 5)
 
 # Python 3.7 and above has a different structure and length
 # of pyc files header. Also, multiple ways how to invalidate pyc file was
@@ -37,6 +39,14 @@ else:
     pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER)
 
 __all__ = ["compile_dir","compile_file","compile_path"]
+
+def optimization_kwarg(opt):
+    """Returns opt as a dictionary {optimization: opt} for use as **kwarg
+    for Python >= 3.5 and empty dictionary for Python 3.4"""
+    if PY35:
+        return dict(optimization=opt)
+    else:
+        return dict()
 
 def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
     if PY36 and quiet < 2 and isinstance(dir, os.PathLike):
@@ -157,8 +167,9 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
         else:
             if optimize >= 0:
                 opt = optimize if optimize >= 1 else ''
+                opt_kwarg = optimization_kwarg(opt)
                 cfile = importlib.util.cache_from_source(
-                                fullname, optimization=opt)
+                                fullname, **opt_kwarg)
             else:
                 cfile = importlib.util.cache_from_source(fullname)
             cache_dir = os.path.dirname(cfile)
@@ -167,7 +178,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack(*pyc_header_format, mtime)
+                    expect = struct.pack(*(pyc_header_format + (mtime,)))
                     with open(cfile, 'rb') as chandle:
                         actual = chandle.read(pyc_header_lenght)
                     if expect == actual:
