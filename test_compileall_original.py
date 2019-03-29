@@ -104,8 +104,8 @@ class CompileallTestsBase:
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
         many_directories = [str(number) for number in range(1, 100)]
-        self.long_path = os.path.join("long",
-                                      self.directory,
+        self.long_path = os.path.join(self.directory,
+                                      "long",
                                       *many_directories)
         os.makedirs(self.long_path)
         self.source_path_long = os.path.join(self.long_path, '_test4.py')
