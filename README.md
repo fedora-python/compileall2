@@ -24,7 +24,7 @@ The goal is to make it compatible for Python >= 3.4 & PyPy 3 and add some featur
 
 * Make `compileall2` compatible with PyPy 3 ✓
 
-* Remove maximum depth limit as described above
+* Remove maximum depth limit as described above ✓
 
 * Add possibility to strip some part of a path to an original file from compiled one
 
