@@ -540,6 +540,22 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
+    def test_default_recursion_limit(self):
+        many_directories = [str(number) for number in range(1, 100)]
+        self.long_path = os.path.join(self.directory,
+                                      "long",
+                                      *many_directories)
+        os.makedirs(self.long_path)
+        self.source_path_long = script_helper.make_script(
+            self.long_path, "deepscript", ""
+        )
+        self.bc_path_long = importlib.util.cache_from_source(
+            self.source_path_long
+        )
+        self.assertFalse(os.path.isfile(self.bc_path_long))
+        self.assertRunOK('-q', os.path.join(self.directory, "long"))
+        self.assertTrue(os.path.isfile(self.bc_path_long))
+
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
         quiet = self.assertRunOK('-q', self.pkgdir)
