@@ -77,7 +77,8 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
 
 def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
-                invalidation_mode=None):
+                invalidation_mode=None, stripdir=None,
+                appenddir=None):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -93,6 +94,9 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
     optimize:  optimization level or -1 for level of the interpreter
     workers:   maximum number of parallel workers
     invalidation_mode: how the up-to-dateness of the pyc will be checked
+    stripdir:  part of path to left-strip from source file path
+    appenddir: path to append to beggining of original file path, applied
+               after stripdir
     """
     ProcessPoolExecutor = None
     if workers is not None:
@@ -115,19 +119,22 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                                            rx=rx, quiet=quiet,
                                            legacy=legacy,
                                            optimize=optimize,
-                                           invalidation_mode=invalidation_mode),
+                                           invalidation_mode=invalidation_mode,
+                                           stripdir=stripdir,
+                                           appenddir=appenddir),
                                    files)
             success = min(results, default=True)
     else:
         for file in files:
             if not compile_file(file, ddir, force, rx, quiet,
-                                legacy, optimize, invalidation_mode):
+                                legacy, optimize, invalidation_mode,
+                                stripdir=stripdir, appenddir=appenddir):
                 success = False
     return success
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
-                 invalidation_mode=None):
+                 invalidation_mode=None, stripdir=None, appenddir=None):
     """Byte-compile one file.
 
     Arguments (only fullname is required):
@@ -141,6 +148,9 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
     optimize:  optimization level or -1 for level of the interpreter
     invalidation_mode: how the up-to-dateness of the pyc will be checked
+    stripdir:  part of path to left-strip from source file path
+    appenddir: path to append to beggining of original file path, applied
+               after stripdir
     """
     success = True
     if PY36 and quiet < 2 and isinstance(fullname, os.PathLike):
@@ -148,12 +158,31 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     else:
         fullname = str(fullname)
     name = os.path.basename(fullname)
+
+    dfile = None
+
     if ddir is not None:
         if not PY36:
             ddir = str(ddir)
         dfile = os.path.join(ddir, name)
-    else:
-        dfile = None
+
+    if stripdir is not None:
+        fullname_parts = fullname.split(os.path.sep)
+        stripdir_parts = stripdir.split(os.path.sep)
+        ddir_parts = list(fullname_parts)
+
+        for spart, opart in zip(stripdir_parts, fullname_parts):
+            if spart == opart:
+                ddir_parts.remove(spart)
+
+        dfile = os.path.join(*ddir_parts)
+
+    if appenddir is not None:
+        if dfile is None:
+            dfile = os.path.join(appenddir, fullname)
+        else:
+            dfile = os.path.join(appenddir, dfile)
+
     if rx is not None:
         mo = rx.search(fullname)
         if mo:
@@ -278,6 +307,20 @@ def main():
                               'compile-time tracebacks and in runtime '
                               'tracebacks in cases where the source file is '
                               'unavailable'))
+    parser.add_argument('-s', metavar='STRIPDIR',  dest='stripdir',
+                        default=None,
+                        help=('part of path to left-strip from path '
+                              'to source file - for example buildroot. '
+                              'if `-d` and `-s` options are specified, '
+                              'then `-d` takes precedence.'))
+    parser.add_argument('-a', metavar='APPENDDIR',  dest='appenddir',
+                        default=None,
+                        help=('path to add as prefix to path '
+                              'to source file - for example / to make '
+                              'it absolute when some part is removed '
+                              'by `-s` option'
+                              'if `-d` and `-a` options are specified, '
+                              'then `-d` takes precedence.'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
                         help=('skip files matching the regular expression; '
                               'the regexp is searched for in the full path '
@@ -343,13 +386,17 @@ def main():
                 if os.path.isfile(dest):
                     if not compile_file(dest, args.ddir, args.force, args.rx,
                                         args.quiet, args.legacy,
-                                        invalidation_mode=invalidation_mode):
+                                        invalidation_mode=invalidation_mode,
+                                        stripdir=args.stripdir,
+                                        appenddir=args.appenddir):
                         success = False
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
                                        args.legacy, workers=args.workers,
-                                       invalidation_mode=invalidation_mode):
+                                       invalidation_mode=invalidation_mode,
+                                       stripdir=args.stripdir,
+                                       appenddir=args.appenddir):
                         success = False
             return success
         else:
