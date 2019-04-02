@@ -91,5 +91,4 @@ ________________________________________________ summary _______________________
 
 ## License
 
-* Original code is licensed under [PSF license v2](LICENSE-PSF2)
-* Modifications are under [MIT license](LICENSE-MIT)
+[PSF license v2](LICENSE)
