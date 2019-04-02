@@ -1,14 +1,15 @@
 # compileall2 Python module
 
-For now, this is just a copy of `compileall` module from CPython source code.
+Copy of `compileall` module from CPython source code with some new features, namely:
 
-The goal is to make it compatible for Python >= 3.4 & PyPy 3 and add some features, namely:
+* compatibility with Python >= 3.4 & PyPy 3
 
-* remove a limit of maximum depth limit when looking for files to compile
+* default recursion limit is now "unlimited" (actually limited by `sys.getrecursionlimit()`)
 
-* add a possibility to strip some part of path to original file from a compiled one
+* `-s` and `-a` command line options for manipulation with path baked into
+  compiled `*.pyc` file.
 
-## ToDo
+## Done
 
 * ✓ Start project :)
 
@@ -26,7 +27,9 @@ The goal is to make it compatible for Python >= 3.4 & PyPy 3 and add some featur
 
 * Remove maximum depth limit as described above ✓
 
-* Add possibility to strip some part of a path to an original file from compiled one
+* Add possibility to strip some part of a path to an original file from compiled one ✓
+
+## ToDo
 
 * Publish it to PyPI
 
