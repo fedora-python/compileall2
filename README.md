@@ -23,17 +23,21 @@ Copy of `compileall` module from CPython source code with some new features, nam
   * 3.5 ✓
   * 3.4 ✓
 
-* Make `compileall2` compatible with PyPy 3 ✓
+* ✓ Make `compileall2` compatible with PyPy 3
 
-* Remove maximum depth limit as described above ✓
+* ✓ Remove maximum depth limit as described above
 
-* Add possibility to strip some part of a path to an original file from compiled one ✓
+* ✓ Add possibility to strip some part of a path to an original file from compiled one
 
 ## ToDo
 
-* Publish it to PyPI
+* **[POSTPONED]** Publish it to PyPI
 
-* Make it available in Fedora
+* **[NEXT STEP]** Make it available in Fedora COPR
+
+* Test it with Python packages in COPR
+
+* Push it to Fedora rawhide
 
 * Test it in Fedora infrastructure with all Python packages
 
