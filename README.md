@@ -7,7 +7,47 @@ Copy of `compileall` module from CPython source code with some new features, nam
 * default recursion limit is now "unlimited" (actually limited by `sys.getrecursionlimit()`)
 
 * `-s` and `-a` command line options for manipulation with path baked into
-  compiled `*.pyc` file.
+  a compiled `*.pyc` file.
+
+## Installation
+
+* From [PyPI](https://pypi.org/project/compileall2/) via `pip install compileall2`
+
+* RPMs will be available in [Fedora COPR](https://copr.fedorainfracloud.org/coprs/lbalhar/compileall2/)
+
+## Usage
+
+`compileall2` can be executed as a Python module or directly.
+
+Example usage:
+
+```shell
+# Create some script with bad syntax
+$ echo "1 / 0" > test.py
+# Compile it
+$ compileall2 test.py 
+Compiling 'test.py'...
+# Try to execute compiled version directly
+$ python __pycache__/test.cpython-37.pyc 
+Traceback (most recent call last):
+  File "test.py", line 1, in <module>
+    1 / 0
+ZeroDivisionError: division by zero
+# Recompile it with changes path which will be visible in error message
+$ compileall2 -f -a /foo/bar test.py 
+Compiling 'test.py'...
+$ python __pycache__/test.cpython-37.pyc 
+Traceback (most recent call last):
+  File "/foo/bar/test.py", line 1, in <module>
+ZeroDivisionError: division by zero
+# Same thing as above but executed as a Python module
+$ python -m compileall2 -f -a /bar/baz test.py 
+Compiling 'test.py'...
+$ python __pycache__/test.cpython-37.pyc 
+Traceback (most recent call last):
+  File "/bar/baz/test.py", line 1, in <module>
+ZeroDivisionError: division by zero
+```
 
 ## Done
 
@@ -29,13 +69,13 @@ Copy of `compileall` module from CPython source code with some new features, nam
 
 * ✓ Add possibility to strip some part of a path to an original file from compiled one
 
+* ✓ Publish it to PyPI
+
+* ✓ Make it available in Fedora COPR
+
 ## ToDo
 
-* **[POSTPONED]** Publish it to PyPI
-
-* **[NEXT STEP]** Make it available in Fedora COPR
-
-* Test it with Python packages in COPR
+* **[NEXT STEP]** Test it with Python packages in COPR
 
 * Push it to Fedora rawhide
 
