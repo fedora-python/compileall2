@@ -9,6 +9,10 @@ Copy of `compileall` module from CPython source code with some new features, nam
 * `-s` and `-a` command line options for manipulation with path baked into
   a compiled `*.pyc` file.
 
+* `-o` command line option enables you to specify multiple optimization levels
+  at once which leads to multiple byte-compiled files (for each optimization level)
+  in one run
+
 ## Installation
 
 * From [PyPI](https://pypi.org/project/compileall2/) via `pip install compileall2`
