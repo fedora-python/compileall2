@@ -91,7 +91,9 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
     quiet:     full output with False or 0, errors only with 1,
                no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
-    optimize:  optimization level or -1 for level of the interpreter
+    optimize:  int or list of optimization levels or -1 for level of
+               the interpreter. Multiple levels leads to multiple compiled
+               files each with one optimization level.
     workers:   maximum number of parallel workers
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
@@ -146,7 +148,9 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     quiet:     full output with False or 0, errors only with 1,
                no output with 2
     legacy:    if True, produce legacy pyc paths instead of PEP 3147 paths
-    optimize:  optimization level or -1 for level of the interpreter
+    optimize:  int or list of optimization levels or -1 for level of
+               the interpreter. Multiple levels leads to multiple compiled
+               files each with one optimization level.
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
     appenddir: path to append to beggining of original file path, applied
@@ -183,44 +187,57 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
         else:
             dfile = os.path.join(appenddir, dfile)
 
+    if isinstance(optimize, int):
+        optimize = [optimize]
+
     if rx is not None:
         mo = rx.search(fullname)
         if mo:
             return success
+
+    opt_cfiles = {}
+
     if os.path.isfile(fullname):
-        if legacy:
-            cfile = fullname + 'c'
-        else:
-            if optimize >= 0:
-                opt = optimize if optimize >= 1 else ''
-                opt_kwarg = optimization_kwarg(opt)
-                cfile = importlib.util.cache_from_source(
-                                fullname, **opt_kwarg)
+        for opt_level in optimize:
+            if legacy:
+                opt_cfiles[opt_level] = fullname + 'c'
             else:
-                cfile = importlib.util.cache_from_source(fullname)
-            cache_dir = os.path.dirname(cfile)
+                if opt_level >= 0:
+                    opt = opt_level if opt_level >= 1 else ''
+                    opt_kwarg = optimization_kwarg(opt)
+                    cfile = (importlib.util.cache_from_source(
+                             fullname, **opt_kwarg))
+                    opt_cfiles[opt_level] = cfile
+                else:
+                    cfile = importlib.util.cache_from_source(fullname)
+                    opt_cfiles[opt_level] = cfile
+
         head, tail = name[:-3], name[-3:]
         if tail == '.py':
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
                     expect = struct.pack(*(pyc_header_format + (mtime,)))
-                    with open(cfile, 'rb') as chandle:
-                        actual = chandle.read(pyc_header_lenght)
-                    if expect == actual:
+                    for cfile in opt_cfiles.values():
+                        with open(cfile, 'rb') as chandle:
+                            actual = chandle.read(pyc_header_lenght)
+                        if expect != actual:
+                            break
+                    else:
                         return success
                 except OSError:
                     pass
             if not quiet:
                 print('Compiling {!r}...'.format(fullname))
             try:
-                if PY37:
-                    ok = py_compile.compile(fullname, cfile, dfile, True,
-                                            optimize=optimize,
-                                            invalidation_mode=invalidation_mode)
-                else:
-                    ok = py_compile.compile(fullname, cfile, dfile, True,
-                                            optimize=optimize)
+                for opt_level, cfile in opt_cfiles.items():
+                    if PY37:
+                        ok = py_compile.compile(fullname, cfile, dfile, True,
+                                                optimize=opt_level,
+                                                invalidation_mode=invalidation_mode)
+                    else:
+                        ok = py_compile.compile(fullname, cfile, dfile, True,
+                                                optimize=opt_level)
             except py_compile.PyCompileError as err:
                 success = False
                 if quiet >= 2:
@@ -335,6 +352,11 @@ def main():
                               'to the equivalent of -l sys.path'))
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
+    parser.add_argument('-o', nargs='+', type=int, dest='opt_levels',
+                        default=-1,
+                        help=('Optimization levels to run compilation with.'
+                              'Default is -1 which uses optimization level of'
+                              'Python interpreter itself (specified by -O).'))
 
     if PY37:
         invalidation_modes = [mode.name.lower().replace('_', '-')
@@ -388,7 +410,8 @@ def main():
                                         args.quiet, args.legacy,
                                         invalidation_mode=invalidation_mode,
                                         stripdir=args.stripdir,
-                                        appenddir=args.appenddir):
+                                        appenddir=args.appenddir,
+                                        optimize=args.opt_levels):
                         success = False
                 else:
                     if not compile_dir(dest, maxlevels, args.ddir,
@@ -396,7 +419,8 @@ def main():
                                        args.legacy, workers=args.workers,
                                        invalidation_mode=invalidation_mode,
                                        stripdir=args.stripdir,
-                                       appenddir=args.appenddir):
+                                       appenddir=args.appenddir,
+                                       optimize=args.opt_levels):
                         success = False
             return success
         else:
