@@ -762,8 +762,6 @@ class CommandLineTestsBase:
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *fullpath[:2])
         appenddir = "/foo"
-        compileall.compile_dir(path, quiet=True,
-                               stripdir=stripdir, appenddir=appenddir)
         self.assertRunOK("-s", stripdir, "-a", appenddir, path)
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_in = os.path.join(appenddir, *fullpath[2:])
