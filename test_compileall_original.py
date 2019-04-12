@@ -812,7 +812,7 @@ class CommandLineTestsBase:
                              ["0", "2"],
                              ["0", "1", "2"]]
         for opt_combination in test_combinations:
-            self.assertRunOK(path, "-o", *opt_combination)
+            self.assertRunOK(path, *("-o" + str(n) for n in opt_combination))
             for opt_level in opt_combination:
                 self.assertTrue(os.path.isfile(bc[int(opt_level)]))
                 try:
