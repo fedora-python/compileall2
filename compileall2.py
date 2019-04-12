@@ -352,8 +352,7 @@ def main():
                               'to the equivalent of -l sys.path'))
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
-    parser.add_argument('-o', nargs='+', type=int, dest='opt_levels',
-                        default=-1,
+    parser.add_argument('-o', action='append', type=int, dest='opt_levels',
                         help=('Optimization levels to run compilation with.'
                               'Default is -1 which uses optimization level of'
                               'Python interpreter itself (specified by -O).'))
@@ -380,6 +379,9 @@ def main():
         maxlevels = args.recursion
     else:
         maxlevels = args.maxlevels
+
+    if args.opt_levels is None:
+        args.opt_levels = [-1]
 
     # if flist is provided then load it
     if args.flist:
