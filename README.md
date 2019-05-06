@@ -6,7 +6,7 @@ Copy of `compileall` module from CPython source code with some new features, nam
 
 * default recursion limit is now "unlimited" (actually limited by `sys.getrecursionlimit()`)
 
-* `-s` and `-a` command line options for manipulation of the path baked into
+* `-s` and `-p` command line options for manipulation of the path baked into
   a compiled `*.pyc` file.
 
 * the `-o` command line option can be specified multiple times to compile for 
@@ -29,7 +29,7 @@ Example usage:
 $ echo "1 / 0" > test.py
 
 # Compile it
-$ compileall2 test.py 
+$ compileall2 test.py
 Compiling 'test.py'...
 
 # Try to execute compiled version directly
@@ -40,17 +40,17 @@ Traceback (most recent call last):
 ZeroDivisionError: division by zero
 
 # Recompile it with changes path which will be visible in error message
-$ compileall2 -f -a /foo/bar test.py 
+$ compileall2 -f -p /foo/bar test.py
 Compiling 'test.py'...
-$ python __pycache__/test.cpython-37.pyc 
+$ python __pycache__/test.cpython-37.pyc
 Traceback (most recent call last):
   File "/foo/bar/test.py", line 1, in <module>
 ZeroDivisionError: division by zero
 
 # Same thing as above but executed as a Python module
-$ python -m compileall2 -f -a /bar/baz test.py 
+$ python -m compileall2 -f -p /bar/baz test.py
 Compiling 'test.py'...
-$ python __pycache__/test.cpython-37.pyc 
+$ python __pycache__/test.cpython-37.pyc
 Traceback (most recent call last):
   File "/bar/baz/test.py", line 1, in <module>
 ZeroDivisionError: division by zero

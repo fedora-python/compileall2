@@ -78,7 +78,7 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
 def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, stripdir=None,
-                appenddir=None):
+                prependdir=None):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -97,7 +97,7 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
     workers:   maximum number of parallel workers
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
-    appenddir: path to append to beggining of original file path, applied
+    prependdir: path to prepend to beggining of original file path, applied
                after stripdir
     """
     ProcessPoolExecutor = None
@@ -123,20 +123,20 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                                            optimize=optimize,
                                            invalidation_mode=invalidation_mode,
                                            stripdir=stripdir,
-                                           appenddir=appenddir),
+                                           prependdir=prependdir),
                                    files)
             success = min(results, default=True)
     else:
         for file in files:
             if not compile_file(file, ddir, force, rx, quiet,
                                 legacy, optimize, invalidation_mode,
-                                stripdir=stripdir, appenddir=appenddir):
+                                stripdir=stripdir, prependdir=prependdir):
                 success = False
     return success
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
-                 invalidation_mode=None, stripdir=None, appenddir=None):
+                 invalidation_mode=None, stripdir=None, prependdir=None):
     """Byte-compile one file.
 
     Arguments (only fullname is required):
@@ -153,7 +153,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                files each with one optimization level.
     invalidation_mode: how the up-to-dateness of the pyc will be checked
     stripdir:  part of path to left-strip from source file path
-    appenddir: path to append to beggining of original file path, applied
+    prependdir: path to prepend to beggining of original file path, applied
                after stripdir
     """
     success = True
@@ -181,11 +181,11 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
 
         dfile = os.path.join(*ddir_parts)
 
-    if appenddir is not None:
+    if prependdir is not None:
         if dfile is None:
-            dfile = os.path.join(appenddir, fullname)
+            dfile = os.path.join(prependdir, fullname)
         else:
-            dfile = os.path.join(appenddir, dfile)
+            dfile = os.path.join(prependdir, dfile)
 
     if isinstance(optimize, int):
         optimize = [optimize]
@@ -330,7 +330,7 @@ def main():
                               'to source file - for example buildroot. '
                               'if `-d` and `-s` options are specified, '
                               'then `-d` takes precedence.'))
-    parser.add_argument('-a', metavar='APPENDDIR',  dest='appenddir',
+    parser.add_argument('-p', metavar='PREPENDDIR',  dest='prependdir',
                         default=None,
                         help=('path to add as prefix to path '
                               'to source file - for example / to make '
@@ -412,7 +412,7 @@ def main():
                                         args.quiet, args.legacy,
                                         invalidation_mode=invalidation_mode,
                                         stripdir=args.stripdir,
-                                        appenddir=args.appenddir,
+                                        prependdir=args.prependdir,
                                         optimize=args.opt_levels):
                         success = False
                 else:
@@ -421,7 +421,7 @@ def main():
                                        args.legacy, workers=args.workers,
                                        invalidation_mode=invalidation_mode,
                                        stripdir=args.stripdir,
-                                       appenddir=args.appenddir,
+                                       prependdir=args.prependdir,
                                        optimize=args.opt_levels):
                         success = False
             return success

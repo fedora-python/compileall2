@@ -294,33 +294,33 @@ class CompileallTestsBase:
             str(err, encoding=sys.getdefaultencoding())
         )
 
-    def test_append_only(self):
+    def test_prepend_only(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)
         os.makedirs(path)
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
-        appenddir = "/foo"
-        compileall.compile_dir(path, quiet=True, appenddir=appenddir)
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True, prependdir=prependdir)
         rc, out, err = script_helper.assert_python_failure(bc)
-        expected_in = os.path.join(appenddir, self.directory, *fullpath)
+        expected_in = os.path.join(prependdir, self.directory, *fullpath)
         self.assertIn(
             expected_in,
             str(err, encoding=sys.getdefaultencoding())
         )
 
-    def test_strip_and_append(self):
+    def test_strip_and_prepend(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)
         os.makedirs(path)
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *fullpath[:2])
-        appenddir = "/foo"
+        prependdir = "/foo"
         compileall.compile_dir(path, quiet=True,
-                               stripdir=stripdir, appenddir=appenddir)
+                               stripdir=stripdir, prependdir=prependdir)
         rc, out, err = script_helper.assert_python_failure(bc)
-        expected_in = os.path.join(appenddir, *fullpath[2:])
+        expected_in = os.path.join(prependdir, *fullpath[2:])
         self.assertIn(
             expected_in,
             str(err, encoding=sys.getdefaultencoding())
@@ -775,17 +775,17 @@ class CommandLineTestsBase:
             self.assertTrue(compile_dir.called)
             self.assertEqual(compile_dir.call_args[-1]['workers'], None)
 
-    def test_strip_and_append(self):
+    def test_strip_and_prepend(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)
         os.makedirs(path)
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *fullpath[:2])
-        appenddir = "/foo"
-        self.assertRunOK("-s", stripdir, "-a", appenddir, path)
+        prependdir = "/foo"
+        self.assertRunOK("-s", stripdir, "-p", prependdir, path)
         rc, out, err = script_helper.assert_python_failure(bc)
-        expected_in = os.path.join(appenddir, *fullpath[2:])
+        expected_in = os.path.join(prependdir, *fullpath[2:])
         self.assertIn(
             expected_in,
             str(err, encoding=sys.getdefaultencoding())
