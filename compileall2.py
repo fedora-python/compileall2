@@ -48,7 +48,12 @@ def optimization_kwarg(opt):
     if PY35:
         return dict(optimization=opt)
     else:
-        return dict()
+        # `debug_override` is a way how to enable optimized byte-compiled files
+        # (.pyo) in Python <= 3.4
+        if opt:
+            return dict(debug_override=False)
+        else:
+            return dict()
 
 def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
     if PY36 and quiet < 2 and isinstance(dir, os.PathLike):
