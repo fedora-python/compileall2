@@ -9,6 +9,10 @@ recursing into subdirectories.  (Even though it should do so for
 packages -- for now, you'll have to deal with packages separately.)
 
 See module py_compile for details of the actual byte-compilation.
+
+License:
+Compileall2 is an enhanced copy of Python's compileall module
+and it follows Python licensing. For more info see: https://www.python.org/psf/license/
 """
 import os
 import sys
