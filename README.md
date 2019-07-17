@@ -80,11 +80,14 @@ ZeroDivisionError: division by zero
 
 * ✓ Make it available in Fedora COPR
 
+* ✓ Test it with Python packages in COPR
+
 ## ToDo
 
-* **[NEXT STEP]** Test it with Python packages in COPR
-
 * Push it to Fedora rawhide
+
+  * ✓ %py_byte_compile RPM macro uses `compileall2`
+  * **[IN PROGRESS]** switch brp-python-bytecompile RPM script to `compileall2`
 
 * Test it in Fedora infrastructure with all Python packages
 
