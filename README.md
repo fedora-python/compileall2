@@ -12,6 +12,8 @@ Copy of `compileall` module from CPython source code with some new features, nam
 * the `-o` command line option can be specified multiple times to compile for 
   multiple optimization levels in one run
 
+* the `-e` command line option for ignoring symlinks pointing outside a specific directory
+
 ## Installation
 
 * From [PyPI](https://pypi.org/project/compileall2/) via `pip install compileall2`
