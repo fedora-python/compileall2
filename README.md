@@ -86,12 +86,12 @@ ZeroDivisionError: division by zero
 
 * Push it to Fedora rawhide
 
-  * ✓ %py_byte_compile RPM macro uses `compileall2`
-  * **[IN PROGRESS]** switch brp-python-bytecompile RPM script to `compileall2`
+  * ✓ %py_byte_compile RPM macro uses `compileall2` (done in [python-rpm-macros](https://src.fedoraproject.org/rpms/python-rpm-macros/pull-request/25))
+  * ✓ switch brp-python-bytecompile RPM script to `compileall2` (done in [redhat-rpm-config](https://src.fedoraproject.org/rpms/redhat-rpm-config/pull-request/64#))
 
-* Test it in Fedora infrastructure with all Python packages
+* ✓ Test it in Fedora infrastructure with all Python packages (done in the mass rebuild for Fedora 31)
 
-* ? Prepare patches for upstream CPython
+* **[IN PROGRESS]** Prepare patches for upstream CPython
 
 ## Testing
 
