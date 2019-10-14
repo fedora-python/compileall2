@@ -93,7 +93,8 @@ ZeroDivisionError: division by zero
 
 * ✓ Test it in Fedora infrastructure with all Python packages (done in the mass rebuild for Fedora 31)
 
-* **[IN PROGRESS]** Prepare patches for upstream CPython
+* ✓ Prepare patches for upstream CPython
+    * [Pull request](https://github.com/python/cpython/pull/16012) merged and will be part of Python 3.9
 
 ## Testing
 
