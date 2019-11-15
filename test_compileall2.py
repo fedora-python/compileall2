@@ -103,16 +103,6 @@ class CompileallTestsBase:
         os.mkdir(self.subdirectory)
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
-        many_directories = [str(number) for number in range(1, 100)]
-        self.long_path = os.path.join(self.directory,
-                                      "long",
-                                      *many_directories)
-        os.makedirs(self.long_path)
-        self.source_path_long = os.path.join(self.long_path, '_test4.py')
-        shutil.copyfile(self.source_path, self.source_path_long)
-        self.bc_path_long = importlib.util.cache_from_source(
-            self.source_path_long
-        )
 
     def tearDown(self):
         shutil.rmtree(self.directory)
@@ -266,14 +256,22 @@ class CompileallTestsBase:
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
 
-    def text_compile_dir_maxlevels(self):
-        # Test the actual impact of maxlevels attr
-        compileall.compile_dir(os.path.join(self.directory, "long"),
-                               maxlevels=10, quiet=True)
-        self.assertFalse(os.path.isfile(self.bc_path_long))
-        compileall.compile_dir(os.path.join(self.directory, "long"),
-                               maxlevels=110, quiet=True)
-        self.assertTrue(os.path.isfile(self.bc_path_long))
+    def test_compile_dir_maxlevels(self):
+        # Test the actual impact of maxlevels parameter
+        depth = 3
+        path = self.directory
+        for i in range(1, depth + 1):
+            path = os.path.join(path, "dir_{}".format(i))
+            source = os.path.join(path, 'script.py')
+            os.mkdir(path)
+            shutil.copyfile(self.source_path, source)
+        pyc_filename = importlib.util.cache_from_source(source)
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth - 1)
+        self.assertFalse(os.path.isfile(pyc_filename))
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
+        self.assertTrue(os.path.isfile(pyc_filename))
 
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
@@ -330,6 +328,15 @@ class CompileallTestsBase:
             str(err, encoding=sys.getdefaultencoding())
         )
 
+    def test_strip_prepend_and_ddir(self):
+        fullpath = ["test", "build", "real", "path", "ddir"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script_helper.make_script(path, "test", "1 / 0")
+        with self.assertRaises(ValueError):
+            compileall.compile_dir(path, quiet=True, ddir="/bar",
+                                   stripdir="/foo", prependdir="/bar")
+
     def test_multiple_optimization_levels(self):
         script = script_helper.make_script(self.directory,
                                            "test_optimization",
@@ -341,7 +348,7 @@ class CompileallTestsBase:
         test_combinations = [[0, 1], [1, 2], [0, 2], [0, 1, 2]]
 
         for opt_combination in test_combinations:
-            compileall.compile_file(script,
+            compileall.compile_file(script, quiet=True,
                                     optimize=opt_combination)
             for opt_level in opt_combination:
                 self.assertTrue(os.path.isfile(bc[opt_level]))
@@ -372,7 +379,7 @@ class CompileallTestsBase:
         allowed_bc = importlib.util.cache_from_source(allowed_symlink)
         prohibited_bc = importlib.util.cache_from_source(prohibited_symlink)
 
-        compileall.compile_dir(symlinks_path, quiet=False, limit_sl_dest=allowed_path)
+        compileall.compile_dir(symlinks_path, quiet=True, limit_sl_dest=allowed_path)
 
         self.assertTrue(os.path.isfile(allowed_bc))
         self.assertFalse(os.path.isfile(prohibited_bc))
@@ -642,21 +649,19 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
-    def test_default_recursion_limit(self):
-        many_directories = [str(number) for number in range(1, 100)]
-        self.long_path = os.path.join(self.directory,
-                                      "long",
-                                      *many_directories)
-        os.makedirs(self.long_path)
-        self.source_path_long = script_helper.make_script(
-            self.long_path, "deepscript", ""
-        )
-        self.bc_path_long = importlib.util.cache_from_source(
-            self.source_path_long
-        )
-        self.assertFalse(os.path.isfile(self.bc_path_long))
-        self.assertRunOK('-q', os.path.join(self.directory, "long"))
-        self.assertTrue(os.path.isfile(self.bc_path_long))
+    @support.skip_unless_symlink
+    def test_symlink_loop(self):
+        # Currently, compileall ignores symlinks to directories.
+        # If that limitation is ever lifted, it should protect against
+        # recursion in symlink loops.
+        pkg = os.path.join(self.pkgdir, 'spam')
+        script_helper.make_pkg(pkg)
+        os.symlink('.', os.path.join(pkg, 'evil'))
+        os.symlink('.', os.path.join(pkg, 'evil2'))
+        self.assertRunOK('-q', self.pkgdir)
+        self.assertCompiled(os.path.join(
+            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+        ))
 
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
