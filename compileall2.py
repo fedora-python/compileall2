@@ -43,8 +43,6 @@ else:
     pyc_header_lenght = 8
     pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER)
 
-RECURSION_LIMIT = sys.getrecursionlimit()
-
 __all__ = ["compile_dir","compile_file","compile_path"]
 
 def optimization_kwarg(opt):
@@ -60,7 +58,7 @@ def optimization_kwarg(opt):
         else:
             return dict()
 
-def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
+def _walk_dir(dir, maxlevels, quiet=0):
     if PY36 and quiet < 2 and isinstance(dir, os.PathLike):
         dir = os.fspath(dir)
     else:
@@ -85,7 +83,7 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
             yield from _walk_dir(fullname, maxlevels=maxlevels - 1,
                                  quiet=quiet)
 
-def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
+def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, stripdir=None,
                 prependdir=None, limit_sl_dest=None):
@@ -123,6 +121,8 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 from concurrent.futures import ProcessPoolExecutor
             except ImportError:
                 workers = 1
+    if maxlevels is None:
+        maxlevels = sys.getrecursionlimit()
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers is not None and workers != 1 and ProcessPoolExecutor is not None:
@@ -327,7 +327,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.')
     parser.add_argument('-l', action='store_const', const=0,
-                        default=RECURSION_LIMIT, dest='maxlevels',
+                        default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")
     parser.add_argument('-r', type=int, dest='recursion',
                         help=('control the maximum recursion level. '
