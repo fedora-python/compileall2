@@ -173,6 +173,11 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path.
     """
+
+    if ddir is not None and (stripdir is not None or prependdir is not None):
+        raise ValueError(("Destination dir (ddir) cannot be used "
+                          "in combination with stripdir or prependdir"))
+
     success = True
     if PY36 and quiet < 2 and isinstance(fullname, os.PathLike):
         fullname = os.fspath(fullname)
@@ -349,16 +354,16 @@ def main():
                         default=None,
                         help=('part of path to left-strip from path '
                               'to source file - for example buildroot. '
-                              'if `-d` and `-s` options are specified, '
-                              'then `-d` takes precedence.'))
+                              '`-d` and `-s` options cannot be '
+                              'specified together.'))
     parser.add_argument('-p', metavar='PREPENDDIR',  dest='prependdir',
                         default=None,
                         help=('path to add as prefix to path '
                               'to source file - for example / to make '
                               'it absolute when some part is removed '
-                              'by `-s` option'
-                              'if `-d` and `-a` options are specified, '
-                              'then `-d` takes precedence.'))
+                              'by `-s` option. '
+                              '`-d` and `-p` options cannot be '
+                              'specified together.'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
                         help=('skip files matching the regular expression; '
                               'the regexp is searched for in the full path '
@@ -407,6 +412,11 @@ def main():
 
     if args.opt_levels is None:
         args.opt_levels = [-1]
+
+    if args.ddir is not None and (
+        args.stripdir is not None or args.prependdir is not None
+    ):
+        parser.error("-d cannot be used in combination with -s or -p")
 
     # if flist is provided then load it
     if args.flist:
