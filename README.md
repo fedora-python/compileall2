@@ -84,8 +84,6 @@ ZeroDivisionError: division by zero
 
 * ✓ Test it with Python packages in COPR
 
-## ToDo
-
 * Push it to Fedora rawhide
 
   * ✓ %py_byte_compile RPM macro uses `compileall2` (done in [python-rpm-macros](https://src.fedoraproject.org/rpms/python-rpm-macros/pull-request/25))
@@ -96,17 +94,18 @@ ZeroDivisionError: division by zero
 * ✓ Prepare patches for upstream CPython
     * [Pull request](https://github.com/python/cpython/pull/16012) merged and will be part of Python 3.9
 
+* ✓ Changes from upstream CPython backported back
+
 ## Testing
 
 You can test it locally with tox or unittest directly:
 
 ```shell
-$ python3 -m unittest test_compileall_original.py
-............sss.......................sss.....................ss.................
-----------------------------------------------------------------------
-Ran 81 tests in 2.137s
+$ python3 -m unittest test_compileall2.py
+..............sss....ss.......................sss....ss.....................ss.............................----------------------------------------------------------------------
+Ran 107 tests in 3.714s
 
-OK (skipped=8)
+OK (skipped=12)
 ```
 
 but running in a Docker container might be better because the superuser has privileges to write to `sys.path` which lowers the number of skipped tests.
@@ -125,23 +124,26 @@ and run tests in it:
 
 ```shell
 $ docker run --rm -it -e TOXENV=py37 -v $PWD:/src:Z -w /src  compileall2
-py37 create: /src/.tox/py37
-py37 installdeps: pytest
-py37 installed: atomicwrites==1.3.0,attrs==19.1.0,more-itertools==6.0.0,pluggy==0.9.0,py==1.8.0,pytest==4.3.1,six==1.12.0
-py37 run-test-pre: PYTHONHASHSEED='519909491'
-py37 runtests: commands[0] | pytest -v -s
-========================================== test session starts ==========================================
-platform linux -- Python 3.7.2, pytest-4.3.1, py-1.8.0, pluggy-0.9.0 -- /src/.tox/py37/bin/python
+py37 installed: atomicwrites==1.3.0,attrs==19.3.0,compileall2==0.5.0,coverage==4.5.4,importlib-metadata==0.23,more-itertools==7.2.0,packaging==19.2,pluggy==0.13.0,py==1.8.0,pyparsing==2.4.5,pytest==5.2.3,six==1.13.0,wcwidth==0.1.7,zipp==0.6.0
+py37 run-test-pre: PYTHONHASHSEED='1615314833'
+py37 runtests: commands[0] | coverage run --append -m py.test
+==================================== test session starts =====================================
+platform linux -- Python 3.7.5, pytest-5.2.3, py-1.8.0, pluggy-0.13.0
 cachedir: .tox/py37/.pytest_cache
-rootdir: /src, inifile:
-collected 81 items
+rootdir: /src
+collected 107 items
+test_compileall2.py ............ss..................................................ss [ 61%]
+..............................ss.........                                              [100%]
 
-test_compileall_original.py::CompileallTestsWithSourceEpoch::test_compile_dir_pathlike PASSED
-test_compileall_original.py::CompileallTestsWithSourceEpoch::test_compile_file_pathlike PASSED
-test_compileall_original.py::CompileallTestsWithSourceEpoch::test_compile_file_pathlike_ddir PASSED
-... etc ...
-================================= 79 passed, 2 skipped in 5.15 seconds ==================================
-________________________________________________ summary ________________________________________________
+=============================== 101 passed, 6 skipped in 7.40s ===============================
+py37 runtests: commands[1] | coverage report -i '--omit=.tox/*'
+Name                  Stmts   Miss  Cover
+-----------------------------------------
+compileall2.py          232     48    79%
+test_compileall2.py     621      8    99%
+-----------------------------------------
+TOTAL                   853     56    93%
+__________________________________________ summary ___________________________________________
   py37: commands succeeded
   congratulations :)
 ```
