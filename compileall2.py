@@ -43,8 +43,6 @@ else:
     pyc_header_lenght = 8
     pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER)
 
-RECURSION_LIMIT = sys.getrecursionlimit()
-
 __all__ = ["compile_dir","compile_file","compile_path"]
 
 def optimization_kwarg(opt):
@@ -60,7 +58,7 @@ def optimization_kwarg(opt):
         else:
             return dict()
 
-def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
+def _walk_dir(dir, maxlevels, quiet=0):
     if PY36 and quiet < 2 and isinstance(dir, os.PathLike):
         dir = os.fspath(dir)
     else:
@@ -85,7 +83,7 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
             yield from _walk_dir(fullname, maxlevels=maxlevels - 1,
                                  quiet=quiet)
 
-def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
+def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, stripdir=None,
                 prependdir=None, limit_sl_dest=None):
@@ -123,6 +121,8 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
                 from concurrent.futures import ProcessPoolExecutor
             except ImportError:
                 workers = 1
+    if maxlevels is None:
+        maxlevels = sys.getrecursionlimit()
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers is not None and workers != 1 and ProcessPoolExecutor is not None:
@@ -173,6 +173,11 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
     limit_sl_dest: ignore symlinks if they are pointing outside of
                    the defined path.
     """
+
+    if ddir is not None and (stripdir is not None or prependdir is not None):
+        raise ValueError(("Destination dir (ddir) cannot be used "
+                          "in combination with stripdir or prependdir"))
+
     success = True
     if PY36 and quiet < 2 and isinstance(fullname, os.PathLike):
         fullname = os.fspath(fullname)
@@ -327,7 +332,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.')
     parser.add_argument('-l', action='store_const', const=0,
-                        default=RECURSION_LIMIT, dest='maxlevels',
+                        default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")
     parser.add_argument('-r', type=int, dest='recursion',
                         help=('control the maximum recursion level. '
@@ -349,16 +354,16 @@ def main():
                         default=None,
                         help=('part of path to left-strip from path '
                               'to source file - for example buildroot. '
-                              'if `-d` and `-s` options are specified, '
-                              'then `-d` takes precedence.'))
+                              '`-d` and `-s` options cannot be '
+                              'specified together.'))
     parser.add_argument('-p', metavar='PREPENDDIR',  dest='prependdir',
                         default=None,
                         help=('path to add as prefix to path '
                               'to source file - for example / to make '
                               'it absolute when some part is removed '
-                              'by `-s` option'
-                              'if `-d` and `-a` options are specified, '
-                              'then `-d` takes precedence.'))
+                              'by `-s` option. '
+                              '`-d` and `-p` options cannot be '
+                              'specified together.'))
     parser.add_argument('-x', metavar='REGEXP', dest='rx', default=None,
                         help=('skip files matching the regular expression; '
                               'the regexp is searched for in the full path '
@@ -407,6 +412,11 @@ def main():
 
     if args.opt_levels is None:
         args.opt_levels = [-1]
+
+    if args.ddir is not None and (
+        args.stripdir is not None or args.prependdir is not None
+    ):
+        parser.error("-d cannot be used in combination with -s or -p")
 
     # if flist is provided then load it
     if args.flist:
