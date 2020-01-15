@@ -11,7 +11,7 @@ setuptools.setup(
     description="Enhanced Python `compileall` module",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/frenzymadness/compileall2",
+    url="https://github.com/fedora-python/compileall2",
     py_modules=["compileall2"],
     entry_points='''
         [console_scripts]
