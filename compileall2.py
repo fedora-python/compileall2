@@ -379,8 +379,8 @@ def main():
     parser.add_argument('-j', '--workers', default=1,
                         type=int, help='Run compileall concurrently')
     parser.add_argument('-o', action='append', type=int, dest='opt_levels',
-                        help=('Optimization levels to run compilation with.'
-                              'Default is -1 which uses optimization level of'
+                        help=('Optimization levels to run compilation with. '
+                              'Default is -1 which uses optimization level of '
                               'Python interpreter itself (specified by -O).'))
     parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
                         help='Ignore symlinks pointing outsite of the DIR')
