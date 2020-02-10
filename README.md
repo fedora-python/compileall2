@@ -14,6 +14,9 @@ Copy of `compileall` module from CPython source code with some new features, nam
 
 * the `-e` command line option for ignoring symlinks pointing outside a specific directory
 
+* the `--hardlink-dupes` command line option which creates hardlinks between
+  `.pyc` files with the same content
+
 ## Installation
 
 * From [PyPI](https://pypi.org/project/compileall2/) via `pip install compileall2`
@@ -95,6 +98,8 @@ ZeroDivisionError: division by zero
     * [Pull request](https://github.com/python/cpython/pull/16012) merged and will be part of Python 3.9
 
 * ✓ Changes from upstream CPython backported back
+
+* ✓ Implemented important features for Fedora RPM build system
 
 ## Testing
 
