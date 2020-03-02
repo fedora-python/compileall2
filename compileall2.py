@@ -113,6 +113,13 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     hardlink_dupes: hardlink duplicated pyc files
     """
     ProcessPoolExecutor = None
+    if ddir is not None and (stripdir is not None or prependdir is not None):
+        raise ValueError(("Destination dir (ddir) cannot be used "
+                          "in combination with stripdir or prependdir"))
+    if ddir is not None:
+        stripdir = dir
+        prependdir = ddir
+        ddir = None
     if workers is not None:
         if workers < 0:
             raise ValueError('workers must be greater or equal to 0')
