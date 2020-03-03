@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="compileall2",
-    version="0.7.0",
+    version="0.7.1",
     author="Lumír Balhar",
     author_email="frenzy.madness@gmail.com",
     description="Enhanced Python `compileall` module",
