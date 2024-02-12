@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+    - "*"
+  pull_request:
+    branches:
+    - "*"
+
+name: Run Tox tests
+
+jobs:
+  tox_test:
+    name: Tox test
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run Tox tests
+      id: test
+      uses: fedora-python/tox-github-action@main
+      with:
+        tox_env: ${{ matrix.tox_env }}
+        dnf_install: "python3-test python3.*-test pypy3-test"
+    strategy:
+      matrix:
+        tox_env: [py36, py37, py38, py39, py310, py311, py312, py313, pypy3]
+
+    # Use GitHub's Linux Docker host
+    runs-on: ubuntu-latest
