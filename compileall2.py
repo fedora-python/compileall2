@@ -36,11 +36,11 @@ PY35 = sys.version_info[0:2] >= (3, 5)
 # introduced in Python 3.7. These cases are covered by variables here or by PY37
 # variable itself.
 if PY37:
-    pyc_struct_format = '<4sll'
+    pyc_struct_format = '<4sLL'
     pyc_header_lenght = 12
     pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER, 0)
 else:
-    pyc_struct_format = '<4sl'
+    pyc_struct_format = '<4sL'
     pyc_header_lenght = 8
     pyc_header_format = (pyc_struct_format, importlib.util.MAGIC_NUMBER)
 
@@ -260,7 +260,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             if not force:
                 try:
                     mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack(*(pyc_header_format + (mtime,)))
+                    expect = struct.pack(*(pyc_header_format + (mtime & 0xFFFF_FFFF,)))
                     for cfile in opt_cfiles.values():
                         with open(cfile, 'rb') as chandle:
                             actual = chandle.read(pyc_header_lenght)
