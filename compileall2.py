@@ -409,8 +409,8 @@ def main():
                         type=int, help='Run compileall concurrently')
     parser.add_argument('-o', action='append', type=int, dest='opt_levels',
                         help=('Optimization levels to run compilation with. '
-                              'Default is -1 which uses optimization level of '
-                              'Python interpreter itself (specified by -O).'))
+                              'Default is -1 which uses the optimization level '
+                              'of the Python interpreter itself (see -O).'))
     parser.add_argument('-e', metavar='DIR', dest='limit_sl_dest',
                         help='Ignore symlinks pointing outsite of the DIR')
     parser.add_argument('--hardlink-dupes', action='store_true',
